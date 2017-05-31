@@ -58,6 +58,12 @@ TEST(Hashee, Sha1Arr) {
         sha1_digest_hex(imbue_iter(array<const char *, 4>{"How ", "are ", "you ", "today?"})));
 }
 
+TEST(Hashee, Sha1InitList) {
+    // works for initializer list as well
+    EXPECT_EQ(sha1_digest_hex("abcdefghijklmno"),
+        sha1_digest_hex(imbue_iter({"abc", "def", "ghi", "jkl", "mno"})));
+}
+ 
 TEST(Hashee, Sha1VecArrChain) {
     EXPECT_EQ(sha1_digest_hex("123, 3.14, 1.57"),
         sha1_digest_hex(

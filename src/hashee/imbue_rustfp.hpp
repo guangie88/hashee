@@ -7,7 +7,7 @@
 
 #include "rustfp/option.h"
 
-#include <functional>
+#include <utility>
 
 namespace hashee {
 
@@ -20,37 +20,45 @@ namespace hashee {
 
     /**
      * Imbues the given type to enable it to become ostream-able.
-     * @tparam T type of value contained in Option, must be ostream-able
-     * @param value optional value to be used for imbuement
+     * @tparam Opt rustfp::Option specialized type, where the contained type must be ostream-able
+     * @param value perfect forwarded optional value to be used for imbuement
      * @return object representing the imbued value
      */
-    template <class T>
-    auto imbue_opt(const rustfp::Option<T> &value) -> details::imbue_opt_impl<T>;
+    template <class Opt>
+    auto imbue_opt(Opt &&value) -> details::imbue_opt_impl<Opt>;
 
     // implementation section
 
     namespace details {
-        template <class T>
+        template <class Opt>
         class imbue_opt_impl {
         public:
-            explicit imbue_opt_impl(const rustfp::Option<T> &value) :
-                r(value) {
+            template <class Optx>
+            explicit imbue_opt_impl(Optx &&value, decltype(value.is_some()) * = nullptr) :
+                value(std::forward<Optx>(value)) {
 
             }
 
-            template <class Tx>
-            friend auto operator<<(std::ostream &lhs, const imbue_opt_impl<Tx> &rhs) -> std::ostream &;
+            /** Provides expression SFINAE to deny non-conforming types */
+            template <class... Tx>
+            explicit imbue_opt_impl(Tx &&...) {
+                static_assert(sizeof...(Tx) == 0, "imbue_opt only works for rustfp::Option<T>.");
+            }
+
+            template <class Optx>
+            friend auto operator<<(std::ostream &lhs, const imbue_opt_impl<Optx> &rhs) -> std::ostream &;
 
         private:
-            std::reference_wrapper<const rustfp::Option<T>> r;
+            Opt value;
         };
 
-        template <class T>
-        auto operator<<(std::ostream &lhs, const imbue_opt_impl<T> &rhs) -> std::ostream & {
+        template <class Opt>
+        auto operator<<(std::ostream &lhs, const imbue_opt_impl<Opt> &rhs) -> std::ostream & {
+            using some_t = typename Opt::some_t;
             static constexpr auto NONE_STR = " ";
 
-            return rhs.r.get().match(
-                [&lhs](const T &v) {
+            return rhs.value.match(
+                [&lhs](const some_t &v) {
                     return std::ref(lhs << v);
                 },
                 [&lhs] {
@@ -59,8 +67,8 @@ namespace hashee {
         }
     }
 
-    template <class T>
-    auto imbue_opt(const rustfp::Option<T> &value) -> details::imbue_opt_impl<T> {
-        return details::imbue_opt_impl<T>(value);
+    template <class Opt>
+    auto imbue_opt(Opt &&value) -> details::imbue_opt_impl<Opt> {
+        return details::imbue_opt_impl<Opt>(std::forward<Opt>(value));
     }
 }
