@@ -71,7 +71,7 @@ TEST(Hashee, Sha1VecArrChain) {
             ", ",
             imbue_iter(array<double, 1>{3.14}),
             ", ",
-            imbue_iter(array<float, 1>{1.57})));
+            imbue_iter(array<float, 1>{1.57f})));
 }
 
 TEST(Hashee, Sha1RustfpSome) {

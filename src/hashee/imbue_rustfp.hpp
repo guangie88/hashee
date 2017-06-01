@@ -7,6 +7,7 @@
 
 #include "rustfp/option.h"
 
+#include <type_traits>
 #include <utility>
 
 namespace hashee {
@@ -54,7 +55,7 @@ namespace hashee {
 
         template <class Opt>
         auto operator<<(std::ostream &lhs, const imbue_opt_impl<Opt> &rhs) -> std::ostream & {
-            using some_t = typename Opt::some_t;
+            using some_t = typename std::remove_const_t<std::remove_reference_t<Opt>>::some_t;
             static constexpr auto NONE_STR = " ";
 
             return rhs.value.match(

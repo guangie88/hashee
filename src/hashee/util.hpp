@@ -40,6 +40,9 @@ namespace hashee {
             case 13: return 'd';
             case 14: return 'e';
             case 15: return 'f';
+            
+            // should not happen by specifications
+            default: return '0';
             }
         }
     }
