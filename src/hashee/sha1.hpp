@@ -5,12 +5,14 @@
 
 #pragma once
 
+#include "imbue.hpp"
 #include "util.hpp"
 
 #include "openssl/sha.h"
 
 #include <array>
 #include <cstdint>
+#include <initializer_list>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -71,6 +73,17 @@ namespace hashee {
     auto sha1_digest(T &&val, Ts &&... vals) -> std::array<uint8_t, SHA_DIGEST_LENGTH>;
 
     /**
+     * Directly digest all the given ostream-able values using std::initializer_list.
+     * @tparam T ostream-able type
+     * @tparam Ts other ostream-able types
+     * @param lst std::initializer_list of ostream-able values
+     * @param vals other ostream-able values
+     * @return SHA-1 message digest
+     */
+    template <class T, class... Ts>
+    auto sha1_digest(std::initializer_list<T> lst, Ts &&... vals) -> std::array<uint8_t, SHA_DIGEST_LENGTH>;
+
+    /**
      * Directly digest all the given ostream-able values.
      * @tparam T ostream-able type
      * @tparam Ts other ostream-able types
@@ -80,6 +93,17 @@ namespace hashee {
      */
     template <class T, class... Ts>
     auto sha1_digest_hex(T &&val, Ts &&... vals) -> std::string;
+
+    /**
+     * Directly digest all the given ostream-able values using std::initializer_list.
+     * @tparam T ostream-able type
+     * @tparam Ts other ostream-able types
+     * @param lst std::initializer_list of ostream-able values
+     * @param vals other ostream-able values
+     * @return SHA-1 message digest in hex format
+     */
+    template <class T, class... Ts>
+    auto sha1_digest_hex(std::initializer_list<T> lst, Ts &&... vals) -> std::string;
     
     // implementation section
 
@@ -97,7 +121,7 @@ namespace hashee {
 
     template <class T>
     auto sha1_msg::operator<<(T &&val) -> sha1_msg & {
-        buf << std::forward<T>(val);
+        buf << imbue(std::forward<T>(val));
         return *this;
     }
 
@@ -129,7 +153,20 @@ namespace hashee {
     }
 
     template <class T, class... Ts>
+    auto sha1_digest(std::initializer_list<T> lst, Ts &&... vals) -> std::array<uint8_t, SHA_DIGEST_LENGTH> {
+        // initializer list must not be passed by reference
+        sha1_msg msg{};
+        return details::sha1_digest_impl(msg, lst, std::forward<Ts>(vals)...);
+    }
+
+    template <class T, class... Ts>
     auto sha1_digest_hex(T &&val, Ts &&... vals) -> std::string {
         return bytes_to_hex(sha1_digest(std::forward<T>(val), std::forward<Ts>(vals)...));
+    }
+
+    template <class T, class... Ts>
+    auto sha1_digest_hex(std::initializer_list<T> lst, Ts &&... vals) -> std::string {
+        // initializer list must not be passed by reference
+        return bytes_to_hex(sha1_digest(lst, std::forward<Ts>(vals)...));
     }
 }

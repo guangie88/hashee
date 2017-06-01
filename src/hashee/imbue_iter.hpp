@@ -7,35 +7,12 @@
 
 #pragma once
 
+#ifndef DISABLE_HASHEE_IMBUE_ITER
+
 #include <initializer_list>
 #include <utility>
 
 namespace hashee {
-
-    // declaration section
-
-    namespace details {
-        template <class T>
-        class imbue_iter_impl;
-    }
-
-    /**
-     * Imbues the given type to enable it to become ostream-able.
-     * @tparam T type of value to be used for imbuement
-     * @param value perfect forwarded value to be used for imbuement
-     * @return object representing the imbued value
-     */
-    template <class T>
-    auto imbue_iter(T &&value) -> details::imbue_iter_impl<T>;
-
-    /**
-     * Imbues the given type to enable it to become ostream-able.
-     * @tparam T type of value in std::initializer list used for imbuement, must be ostream-able
-     * @param values initializer list values for imbue
-     * @return object representing the imbued list of values
-     */
-    template <class T>
-    auto imbue_iter(std::initializer_list<T> values) -> details::imbue_iter_impl<std::initializer_list<T>>;
 
     // implementation section
     
@@ -52,12 +29,6 @@ namespace hashee {
 
             }
 
-            /** Provides expression SFINAE to deny non-conforming types */
-            template <class... Tx>
-            explicit imbue_iter_impl(Tx &&...) {
-                static_assert(sizeof...(Tx) == 0, "imbue_iter only works for T that has begin and end methods.");
-            }
-
             template <class Tx>
             friend auto operator<<(std::ostream &lhs, const imbue_iter_impl<Tx> &rhs) -> std::ostream &;
 
@@ -68,7 +39,7 @@ namespace hashee {
         template <class T>
         auto operator<<(std::ostream &lhs, const imbue_iter_impl<T> &rhs) -> std::ostream & {
             for (const auto &v : rhs.values) {
-                lhs << v;
+                lhs << imbue(v);
             }
 
             return lhs;
@@ -76,12 +47,18 @@ namespace hashee {
     }
 
     template <class T>
-    auto imbue_iter(T &&values) -> details::imbue_iter_impl<T> {
+    auto imbue(
+        T &&values,
+        decltype(values.begin()) *,
+        decltype(values.end()) *) -> details::imbue_iter_impl<T> {
+
         return details::imbue_iter_impl<T>(std::forward<T>(values));
     }
 
     template <class T>
-    auto imbue_iter(std::initializer_list<T> values) -> details::imbue_iter_impl<std::initializer_list<T>> {
+    auto imbue(std::initializer_list<T> values) -> details::imbue_iter_impl<std::initializer_list<T>> {
         return details::imbue_iter_impl<std::initializer_list<T>>(values);
     }
 }
+
+#endif

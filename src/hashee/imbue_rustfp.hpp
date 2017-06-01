@@ -5,28 +5,14 @@
 
 #pragma once
 
+#ifndef DISABLE_HASHEE_IMBUE_RUSTFP
+
 #include "rustfp/option.h"
 
 #include <type_traits>
 #include <utility>
 
 namespace hashee {
-
-    // declaration section
-
-    namespace details {
-        template <class T>
-        class imbue_opt_impl;
-    }
-
-    /**
-     * Imbues the given type to enable it to become ostream-able.
-     * @tparam Opt rustfp::Option specialized type, where the contained type must be ostream-able
-     * @param value perfect forwarded optional value to be used for imbuement
-     * @return object representing the imbued value
-     */
-    template <class Opt>
-    auto imbue_opt(Opt &&value) -> details::imbue_opt_impl<Opt>;
 
     // implementation section
 
@@ -38,12 +24,6 @@ namespace hashee {
             explicit imbue_opt_impl(Optx &&value, decltype(value.is_some()) * = nullptr) :
                 value(std::forward<Optx>(value)) {
 
-            }
-
-            /** Provides expression SFINAE to deny non-conforming types */
-            template <class... Tx>
-            explicit imbue_opt_impl(Tx &&...) {
-                static_assert(sizeof...(Tx) == 0, "imbue_opt only works for rustfp::Option<T>.");
             }
 
             template <class Optx>
@@ -60,7 +40,7 @@ namespace hashee {
 
             return rhs.value.match(
                 [&lhs](const some_t &v) {
-                    return std::ref(lhs << v);
+                    return std::ref(lhs << imbue(v));
                 },
                 [&lhs] {
                     return std::ref(lhs << NONE_STR);
@@ -69,7 +49,9 @@ namespace hashee {
     }
 
     template <class Opt>
-    auto imbue_opt(Opt &&value) -> details::imbue_opt_impl<Opt> {
+    auto imbue(Opt &&value, decltype(value.is_some()) *) -> details::imbue_opt_impl<Opt> {
         return details::imbue_opt_impl<Opt>(std::forward<Opt>(value));
     }
 }
+
+#endif
