@@ -108,7 +108,7 @@ namespace hashee {
     // implementation section
 
     namespace details {
-        auto sha1_digest_impl(sha1_msg &msg) -> std::array<uint8_t, SHA_DIGEST_LENGTH> {
+        inline auto sha1_digest_impl(sha1_msg &msg) -> std::array<uint8_t, SHA_DIGEST_LENGTH> {
             return msg.digest();
         }
 
